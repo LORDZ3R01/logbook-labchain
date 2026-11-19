@@ -1,12 +1,27 @@
 
 class BlockchainConfig {
   // ==========================================
-  // KONFIGURASI JARINGAN ETHEREUM SEPOLIA
+  // KONFIGURASI ETHEREUM SEPOLIA
   // ==========================================
 
-  static const String rpcUrl =
-    'https://eth-sepolia.g.alchemy.com/v2/REDACTED';
+  // API Key Alchemy dibaca dari secrets.json
+  static const String _alchemyApiKey =
+      String.fromEnvironment('ALCHEMY_API_KEY');
 
+  // URL RPC Ethereum Sepolia
+  static String get rpcUrl {
+    if (_alchemyApiKey.isEmpty) {
+      throw StateError(
+        'ALCHEMY_API_KEY belum diatur. '
+        'Jalankan aplikasi dengan '
+        '--dart-define-from-file=secrets.json',
+      );
+    }
+
+    return 'https://eth-sepolia.g.alchemy.com/v2/$_alchemyApiKey';
+  }
+
+  // Chain ID Ethereum Sepolia
   static const int chainId = 11155111;
 
   // ==========================================
@@ -27,8 +42,6 @@ class BlockchainConfig {
 
   static const String labChainName = 'LabChain';
 
-  // Blok saat smart contract LabChain pertama kali di-deploy.
-  // Digunakan sebagai titik awal pembacaan event blockchain.
   static const int labChainDeploymentBlock = 12153331;
 
   // ==========================================
@@ -38,13 +51,18 @@ class BlockchainConfig {
   static const String blockExplorerUrl =
       'https://eth-sepolia.blockscout.com';
 
-  // URL transaksi berdasarkan Transaction Hash.
+  // URL transaksi
   static String transactionUrl(String transactionHash) {
     return '$blockExplorerUrl/tx/$transactionHash';
   }
 
-  // URL smart contract LabChain.
+  // URL smart contract LabChain
   static String get labChainExplorerUrl {
     return '$blockExplorerUrl/address/$labChainAddress';
+  }
+
+  // URL riwayat log smart contract
+  static String get labChainLogsUrl {
+    return '$blockExplorerUrl/address/$labChainAddress?tab=logs';
   }
 }
