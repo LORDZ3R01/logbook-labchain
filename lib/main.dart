@@ -59,6 +59,9 @@ class _LabChainTestPageState
   int jumlahAlat = 0;
   int jumlahPeminjaman = 0;
 
+  List<Map<String, dynamic>> daftarAlat = [];
+  List<Map<String, dynamic>> daftarPeminjaman = [];
+
   String status = 'Menginisialisasi aplikasi...';
 
   @override
@@ -69,6 +72,10 @@ class _LabChainTestPageState
       initWallet();
     });
   }
+
+  // ==========================================
+  // INISIALISASI WALLET
+  // ==========================================
 
   Future<void> initWallet() async {
     try {
@@ -85,7 +92,10 @@ class _LabChainTestPageState
       });
 
       await muatData();
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('[DASHBOARD] ERROR INIT WALLET: $e');
+      debugPrint('$stackTrace');
+
       if (!mounted) return;
 
       setState(() {
@@ -93,6 +103,10 @@ class _LabChainTestPageState
       });
     }
   }
+
+  // ==========================================
+  // MENGHUBUNGKAN WALLET
+  // ==========================================
 
   Future<void> hubungkanWallet() async {
     if (!walletReady || walletLoading) return;
@@ -113,7 +127,10 @@ class _LabChainTestPageState
       });
 
       await muatData();
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('[DASHBOARD] ERROR CONNECT WALLET: $e');
+      debugPrint('$stackTrace');
+
       if (!mounted) return;
 
       setState(() {
@@ -123,47 +140,141 @@ class _LabChainTestPageState
     }
   }
 
+  // ==========================================
+  // MEMUTUSKAN WALLET
+  // ==========================================
+
   Future<void> putuskanWallet() async {
+    if (walletLoading) return;
+
+    setState(() {
+      walletLoading = true;
+    });
+
     try {
       await wallet.disconnect();
 
       if (!mounted) return;
 
       setState(() {
+        walletLoading = false;
         status = 'Wallet berhasil diputuskan.';
       });
     } catch (e) {
       if (!mounted) return;
 
       setState(() {
+        walletLoading = false;
         status = 'Gagal memutuskan wallet: $e';
       });
     }
   }
+
+  // ==========================================
+  // MEMUAT DATA BLOCKCHAIN
+  // ==========================================
 
   Future<void> muatData() async {
     if (!walletReady || loading) return;
 
     setState(() {
       loading = true;
+      status = 'Memuat data blockchain...';
     });
 
     try {
       await blockchain.init();
 
-      final alat = await blockchain.jumlahAlat();
-      final peminjaman =
+      // Mengambil jumlah data
+      final totalAlat = await blockchain.jumlahAlat();
+
+      final totalPeminjaman =
           await blockchain.jumlahPeminjaman();
+
+      debugPrint('======================================');
+      debugPrint('[DASHBOARD] MEMUAT DETAIL DATA');
+      debugPrint('[DASHBOARD] Total alat: $totalAlat');
+      debugPrint(
+        '[DASHBOARD] Total peminjaman: $totalPeminjaman',
+      );
+
+      // --------------------------------------
+      // MENGAMBIL DETAIL ALAT
+      // --------------------------------------
+
+      final List<Map<String, dynamic>> dataAlat = [];
+
+      for (int i = 0; i < totalAlat; i++) {
+        try {
+          final detail = await blockchain.ambilAlat(i);
+
+          dataAlat.add({
+            'id': i,
+            ...detail,
+          });
+
+          debugPrint(
+            '[DASHBOARD] Alat ID $i berhasil dimuat: $detail',
+          );
+        } catch (e) {
+          debugPrint(
+            '[DASHBOARD] Gagal memuat alat ID $i: $e',
+          );
+        }
+      }
+
+      // --------------------------------------
+      // MENGAMBIL DETAIL PEMINJAMAN
+      // --------------------------------------
+
+      final List<Map<String, dynamic>> dataPeminjaman = [];
+
+      for (int i = 0; i < totalPeminjaman; i++) {
+        try {
+          final detail =
+              await blockchain.ambilPeminjaman(i);
+
+          dataPeminjaman.add({
+            'id': i,
+            ...detail,
+          });
+
+          debugPrint(
+            '[DASHBOARD] Peminjaman ID $i berhasil dimuat: $detail',
+          );
+        } catch (e) {
+          debugPrint(
+            '[DASHBOARD] Gagal memuat peminjaman ID $i: $e',
+          );
+        }
+      }
 
       if (!mounted) return;
 
       setState(() {
-        jumlahAlat = alat;
-        jumlahPeminjaman = peminjaman;
+        jumlahAlat = totalAlat;
+        jumlahPeminjaman = totalPeminjaman;
+
+        daftarAlat = dataAlat;
+        daftarPeminjaman = dataPeminjaman;
+
         loading = false;
-        status = 'Berhasil terhubung ke LabChain Sepolia.';
+        status = 'Berhasil memuat data LabChain Sepolia.';
       });
-    } catch (e) {
+
+      debugPrint('======================================');
+      debugPrint('[DASHBOARD] PEMUATAN SELESAI');
+      debugPrint(
+        '[DASHBOARD] Alat berhasil dimuat: ${dataAlat.length}',
+      );
+      debugPrint(
+        '[DASHBOARD] Peminjaman berhasil dimuat: ${dataPeminjaman.length}',
+      );
+      debugPrint('======================================');
+    } catch (e, stackTrace) {
+      debugPrint('[DASHBOARD] ERROR MEMUAT DATA: $e');
+      debugPrint('$stackTrace');
+
       if (!mounted) return;
 
       setState(() {
@@ -172,6 +283,10 @@ class _LabChainTestPageState
       });
     }
   }
+
+  // ==========================================
+  // NAVIGASI DAFTAR ALAT
+  // ==========================================
 
   void bukaDaftarAlat() {
     if (!wallet.isConnected) {
@@ -191,6 +306,10 @@ class _LabChainTestPageState
       ),
     );
   }
+
+  // ==========================================
+  // NAVIGASI PEMINJAMAN
+  // ==========================================
 
   Future<void> bukaPeminjaman() async {
     if (!wallet.isConnected) {
@@ -214,6 +333,10 @@ class _LabChainTestPageState
     }
   }
 
+  // ==========================================
+  // NAVIGASI PERSETUJUAN ADMIN
+  // ==========================================
+
   Future<void> bukaPersetujuanAdmin() async {
     if (!wallet.isConnected) {
       tampilkanPesan(
@@ -235,6 +358,10 @@ class _LabChainTestPageState
       await muatData();
     }
   }
+
+  // ==========================================
+  // NAVIGASI PENGEMBALIAN
+  // ==========================================
 
   Future<void> bukaPengembalian() async {
     if (!wallet.isConnected) {
@@ -258,6 +385,10 @@ class _LabChainTestPageState
     }
   }
 
+  // ==========================================
+  // NAVIGASI KONFIRMASI PENGEMBALIAN
+  // ==========================================
+
   Future<void> bukaKonfirmasiPengembalian() async {
     if (!wallet.isConnected) {
       tampilkanPesan(
@@ -280,7 +411,10 @@ class _LabChainTestPageState
     }
   }
 
-  // Membuka halaman Riwayat Transaksi
+  // ==========================================
+  // NAVIGASI RIWAYAT TRANSAKSI
+  // ==========================================
+
   Future<void> bukaRiwayat() async {
     if (!wallet.isConnected) {
       tampilkanPesan(
@@ -303,6 +437,10 @@ class _LabChainTestPageState
     }
   }
 
+  // ==========================================
+  // MENAMPILKAN PESAN
+  // ==========================================
+
   void tampilkanPesan(String pesan) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -310,6 +448,10 @@ class _LabChainTestPageState
       ),
     );
   }
+
+  // ==========================================
+  // KARTU STATISTIK
+  // ==========================================
 
   Widget kartuData({
     required String judul,
@@ -351,6 +493,10 @@ class _LabChainTestPageState
     );
   }
 
+  // ==========================================
+  // MENU DASHBOARD
+  // ==========================================
+
   Widget menuDashboard({
     required String judul,
     required String deskripsi,
@@ -388,6 +534,84 @@ class _LabChainTestPageState
     );
   }
 
+  // ==========================================
+  // KARTU DETAIL ALAT
+  // ==========================================
+
+  Widget kartuAlat(Map<String, dynamic> alat) {
+    final bool aktif = alat['aktif'] == true;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 10),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: Colors.green.shade50,
+          child: const Icon(
+            Icons.devices,
+            color: Colors.green,
+          ),
+        ),
+        title: Text(
+          alat['nama'].toString(),
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        subtitle: Text(
+          'ID Alat: ${alat['id']}\n'
+          'Total stok: ${alat['totalStok']}\n'
+          'Sedang dipinjam: ${alat['sedangDipinjam']}',
+        ),
+        isThreeLine: true,
+        trailing: Icon(
+          aktif ? Icons.check_circle : Icons.cancel,
+          color: aktif ? Colors.green : Colors.red,
+        ),
+      ),
+    );
+  }
+
+  // ==========================================
+  // KARTU DETAIL PEMINJAMAN
+  // ==========================================
+
+  Widget kartuPeminjaman(
+    Map<String, dynamic> data,
+  ) {
+    final int statusPeminjaman =
+        data['status'] as int;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 10),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: Colors.blue.shade50,
+          child: const Icon(
+            Icons.assignment,
+            color: Colors.blue,
+          ),
+        ),
+        title: Text(
+          'Peminjaman #${data['id']}',
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        subtitle: Text(
+          'ID Alat: ${data['alatId']}\n'
+          'Jumlah: ${data['jumlah']}\n'
+          'Peminjam: ${data['peminjam']}\n'
+          'Status: $statusPeminjaman',
+        ),
+        isThreeLine: true,
+      ),
+    );
+  }
+
+  // ==========================================
+  // DISPOSE
+  // ==========================================
+
   @override
   void dispose() {
     if (walletReady) {
@@ -396,6 +620,10 @@ class _LabChainTestPageState
 
     super.dispose();
   }
+
+  // ==========================================
+  // TAMPILAN UTAMA
+  // ==========================================
 
   @override
   Widget build(BuildContext context) {
@@ -420,6 +648,7 @@ class _LabChainTestPageState
           ),
         ],
       ),
+
       body: !walletReady
           ? Center(
               child: Column(
@@ -427,15 +656,26 @@ class _LabChainTestPageState
                 children: [
                   const CircularProgressIndicator(),
                   const SizedBox(height: 15),
-                  Text(status),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      status,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
                 ],
               ),
             )
+
           : RefreshIndicator(
               onRefresh: muatData,
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
+                  // ==================================
+                  // HEADER DASHBOARD
+                  // ==================================
+
                   const Text(
                     'Dashboard',
                     style: TextStyle(
@@ -443,16 +683,22 @@ class _LabChainTestPageState
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+
                   const SizedBox(height: 5),
+
                   Text(
-                    'Logbook Peminjaman Alat Laboratorium IoT',
+                    'Logbook Peminjaman Alat Laboratorium Berbasis Blockchain',
                     style: TextStyle(
                       color: Colors.grey.shade600,
                     ),
                   ),
+
                   const SizedBox(height: 20),
 
-                  // Wallet Connection
+                  // ==================================
+                  // WALLET CONNECTION
+                  // ==================================
+
                   Card(
                     child: Padding(
                       padding: const EdgeInsets.all(16),
@@ -476,7 +722,9 @@ class _LabChainTestPageState
                               ),
                             ],
                           ),
+
                           const SizedBox(height: 15),
+
                           Row(
                             children: [
                               Icon(
@@ -497,6 +745,7 @@ class _LabChainTestPageState
                               ),
                             ],
                           ),
+
                           if (connected &&
                               wallet.address != null) ...[
                             const SizedBox(height: 10),
@@ -507,7 +756,9 @@ class _LabChainTestPageState
                               ),
                             ),
                           ],
+
                           const SizedBox(height: 15),
+
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton.icon(
@@ -546,7 +797,10 @@ class _LabChainTestPageState
 
                   const SizedBox(height: 20),
 
-                  // Data Blockchain
+                  // ==================================
+                  // DATA BLOCKCHAIN
+                  // ==================================
+
                   const Text(
                     'Data Blockchain',
                     style: TextStyle(
@@ -554,6 +808,7 @@ class _LabChainTestPageState
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+
                   const SizedBox(height: 10),
 
                   Row(
@@ -575,7 +830,80 @@ class _LabChainTestPageState
 
                   const SizedBox(height: 20),
 
-                  // Menu Utama
+                  // ==================================
+                  // DAFTAR ALAT
+                  // ==================================
+
+                  const Text(
+                    'Daftar Alat Laboratorium',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  if (loading && daftarAlat.isEmpty)
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(16),
+                        child: CircularProgressIndicator(),
+                      ),
+                    )
+                  else if (daftarAlat.isEmpty)
+                    const Card(
+                      child: Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Text(
+                          'Belum ada data alat.',
+                        ),
+                      ),
+                    )
+                  else
+                    ...daftarAlat.map(kartuAlat),
+
+                  const SizedBox(height: 20),
+
+                  // ==================================
+                  // DATA PEMINJAMAN
+                  // ==================================
+
+                  const Text(
+                    'Data Peminjaman',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  if (loading && daftarPeminjaman.isEmpty)
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(16),
+                        child: CircularProgressIndicator(),
+                      ),
+                    )
+                  else if (daftarPeminjaman.isEmpty)
+                    const Card(
+                      child: Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Text(
+                          'Belum ada data peminjaman.',
+                        ),
+                      ),
+                    )
+                  else
+                    ...daftarPeminjaman.map(kartuPeminjaman),
+
+                  const SizedBox(height: 20),
+
+                  // ==================================
+                  // MENU UTAMA
+                  // ==================================
+
                   const Text(
                     'Menu Utama',
                     style: TextStyle(
@@ -583,6 +911,7 @@ class _LabChainTestPageState
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+
                   const SizedBox(height: 10),
 
                   menuDashboard(
@@ -630,7 +959,6 @@ class _LabChainTestPageState
                     onTap: bukaKonfirmasiPengembalian,
                   ),
 
-                  // Menu Riwayat Transaksi
                   menuDashboard(
                     judul: 'Riwayat Transaksi',
                     deskripsi:
@@ -642,7 +970,10 @@ class _LabChainTestPageState
 
                   const SizedBox(height: 15),
 
-                  // Status Blockchain
+                  // ==================================
+                  // STATUS BLOCKCHAIN
+                  // ==================================
+
                   Card(
                     color: Colors.green.shade50,
                     child: Padding(
@@ -666,8 +997,11 @@ class _LabChainTestPageState
                               ),
                             ],
                           ),
+
                           const SizedBox(height: 10),
+
                           Text(status),
+
                           if (loading) ...[
                             const SizedBox(height: 10),
                             const LinearProgressIndicator(),

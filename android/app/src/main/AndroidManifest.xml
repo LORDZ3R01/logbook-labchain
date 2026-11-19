@@ -1,15 +1,23 @@
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Izin koneksi internet untuk RPC Alchemy dan blockchain -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Memeriksa status koneksi jaringan -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- Aplikasi wallet yang dapat dihubungi -->
     <queries>
-        <package android:name="io.metamask"/>
-        <package android:name="com.wallet.crypto.trustapp"/>
+        <package android:name="io.metamask" />
+        <package android:name="com.wallet.crypto.trustapp" />
     </queries>
 
     <application
         android:label="LabChain"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false">
 
         <activity
             android:name=".MainActivity"
@@ -22,18 +30,19 @@
 
             <meta-data
                 android:name="io.flutter.embedding.android.NormalTheme"
-                android:resource="@style/NormalTheme"/>
+                android:resource="@style/NormalTheme" />
 
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
         </activity>
 
+        <!-- Flutter embedding -->
         <meta-data
             android:name="flutterEmbedding"
-            android:value="2"/>
+            android:value="2" />
 
     </application>
 
