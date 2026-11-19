@@ -40,12 +40,17 @@ Aplikasi ini dirancang untuk meningkatkan transparansi, keamanan, dan keterlacak
 
 ## Smart Contract
 
-- **Nama kontrak:** LabChain
-- **Jaringan:** Ethereum Sepolia
-- **Chain ID:** 11155111
-- **Alamat kontrak:** `0x336561E901540E084c028010F1007B176c3a112f`
+Smart contract LabChain dikembangkan menggunakan Solidity
+dan di-deploy pada jaringan Ethereum Sepolia.
 
-[ Lihat Smart Contract di Blockscout](https://eth-sepolia.blockscout.com/address/0x336561E901540E084c028010F1007B176c3a112f)
+- Source Code: `contracts/LabChain.sol`
+- Network: Ethereum Sepolia
+- Chain ID: 11155111
+- Contract Address:
+  `0x336561E901540E084c028010F1007B176c3a112f`
+
+- Block Explorer:
+  https://eth-sepolia.blockscout.com/address/0x336561E901540E084c028010F1007B176c3a112f
 
 ## Persyaratan
 
